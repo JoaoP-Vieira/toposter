@@ -6,6 +6,20 @@ import math
 
 app = typer.Typer()
 
+class Vertice:
+    def __init__(self, label: str):
+        self.label = label
+        self.status = 0
+
+    def set_status(self, status: int):
+        self.status = status
+
+def find_by_status(list: list[Vertice], status: int):
+    for item in list:
+        if (item.status == status): return item, list.index(item)
+
+    return None
+
 @app.command()
 def toposter(path: Path):
     """Reads and prints basic info about an image file."""
@@ -34,6 +48,9 @@ def toposter(path: Path):
     row_size = math.ceil(IHEIGHT / (FHEIGHT))
 
     height_acc = 0
+
+    vertice_acc = 1
+    vertice_list = []
 
     for r in range(row_size):
         y0 = height_acc
@@ -68,25 +85,66 @@ def toposter(path: Path):
             )
 
             font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-            font_scale = 4
-            font_thickness = 8
-            text_color = (0, 0, 0)
+            font_scale = 3
+            font_thickness = 6
+            
+            box_size = 177
+            border_thickness = 4
+            color = (0, 0, 0)
 
-            # lt
-            if (c > 0 and r > 0):
-                bordered_image = cv2.putText(bordered_image, f"{r+1}{c+1}", (50, 100), font, font_scale, text_color, font_thickness, cv2.LINE_AA)
-
-            # rt
-            if ((c + 1) < col_size and r > 0):
-                bordered_image = cv2.putText(bordered_image, f"{r+1}{c+1}", (FWIDTH - 150, 100), font, font_scale, text_color, font_thickness, cv2.LINE_AA)
-
-            # lb
-            if (c > 0 and (r + 1) < row_size):
-                bordered_image = cv2.putText(bordered_image, f"{r+1}{c+1}", (50, FHEIGHT - 50), font, font_scale, text_color, font_thickness, cv2.LINE_AA)
-
-            # rb
+            # rb (right-bottom)
             if ((c + 1) < col_size and (r + 1) < row_size):
-                bordered_image = cv2.putText(bordered_image, f"{r+1}{c+1}", (FWIDTH - 150, FHEIGHT - 50), font, font_scale, text_color, font_thickness, cv2.LINE_AA)
+                vertice = Vertice(str(vertice_acc))
+                vertice.set_status(2)
+                vertice_list.append(vertice)
+
+                top_left = (FWIDTH - box_size, FHEIGHT - box_size)
+                bottom_right = (FWIDTH, FHEIGHT)
+                cv2.rectangle(bordered_image, top_left, bottom_right, color, border_thickness)
+
+                bordered_image = cv2.putText(bordered_image, vertice.label,
+                                            (top_left[0] + 20, bottom_right[1] - 20),
+                                            font, font_scale, color, font_thickness, cv2.LINE_AA)
+
+            # lb (left-bottom)
+            if (c > 0 and (r + 1) < row_size):
+                vertice, idx = find_by_status(vertice_list, 2)
+                vertice_list[idx].set_status(3)
+
+                top_left = (0, FHEIGHT - box_size)
+                bottom_right = (box_size, FHEIGHT)
+                cv2.rectangle(bordered_image, top_left, bottom_right, color, border_thickness)
+
+                bordered_image = cv2.putText(bordered_image, vertice.label,
+                                            (top_left[0] + 20, bottom_right[1] - 20),
+                                            font, font_scale, color, font_thickness, cv2.LINE_AA)
+
+            # rt (right-top)
+            if ((c + 1) < col_size and r > 0):
+                vertice, idx = find_by_status(vertice_list, 3)
+                vertice_list[idx].set_status(4)
+
+                top_left = (FWIDTH - box_size, 0)
+                bottom_right = (FWIDTH, box_size)
+                cv2.rectangle(bordered_image, top_left, bottom_right, color, border_thickness)
+
+                bordered_image = cv2.putText(bordered_image, vertice.label,
+                                            (top_left[0] + 20, top_left[1] + box_size - 20),
+                                            font, font_scale, color, font_thickness, cv2.LINE_AA)
+
+            # lt (left-top)
+            if (c > 0 and r > 0):
+                vertice, idx = find_by_status(vertice_list, 4)
+                vertice_list[idx].set_status(5)
+
+                top_left = (0, 0)
+                bottom_right = (box_size, box_size)
+                cv2.rectangle(bordered_image, top_left, bottom_right, color, border_thickness)
+
+                bordered_image = cv2.putText(bordered_image, vertice.label,
+                                            (top_left[0] + 20, top_left[1] + box_size - 20),
+                                            font, font_scale, color, font_thickness, cv2.LINE_AA)
+            vertice_acc += 1
 
             cv2.imwrite(f"out/{r+1}{c+1}_out.jpg", bordered_image)
 
