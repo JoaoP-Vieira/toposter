@@ -3,7 +3,8 @@ name = "toposter"
 version = "0.1.0"
 dependencies = [
     "typer>=0.9.0",
-    "opencv-python-headless>=4.4.0.46"
+    "opencv-python-headless>=4.4.0.46",
+    "pillow>=8.4.0"
 ]
 
 [project.scripts]

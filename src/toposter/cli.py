@@ -1,5 +1,6 @@
 import typer
 from pathlib import Path
+from PIL import Image
 import numpy as np
 import cv2
 import math
@@ -31,6 +32,8 @@ def toposter(path: Path):
     if image is None:
         typer.echo("Error reading the image file.")
         raise typer.Exit(code=1)
+
+    pages = []
 
     A4WIDTH = 2480
     A4HEIGHT = 3508
@@ -146,7 +149,15 @@ def toposter(path: Path):
                                             font, font_scale, color, font_thickness, cv2.LINE_AA)
             vertice_acc += 1
 
-            cv2.imwrite(f"out/{r+1}{c+1}_out.jpg", bordered_image)
+            final_a4 = 255 * np.ones((A4HEIGHT, A4WIDTH, 3), dtype=np.uint8)
+
+            final_a4[YBORDER:YBORDER + bordered_image.shape[0], XBORDER:XBORDER + bordered_image.shape[1]] = bordered_image
+
+            a4_rgb = cv2.cvtColor(final_a4, cv2.COLOR_BGR2RGB)
+            pages.append(Image.fromarray(a4_rgb))
+
+    if pages:
+        pages[0].save("out/poster.pdf", save_all=True, append_images=pages[1:])
 
 if __name__ == "__main__":
     app()
